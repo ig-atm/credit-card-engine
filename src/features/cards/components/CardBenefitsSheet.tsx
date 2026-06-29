@@ -95,7 +95,7 @@ export function CardBenefitsSheet({ cardId, onClose }: CardBenefitsSheetProps) {
             <div className="flex-1 overflow-y-auto px-6 py-4 flex flex-col gap-6 pb-8">
               {/* Card visual preview at top */}
               <div
-                className="h-32 w-full rounded-2xl p-5 flex flex-col justify-between text-white relative overflow-hidden shadow-lg"
+                className="h-32 w-full rounded-2xl p-5 flex flex-col justify-between text-white relative overflow-hidden shadow-lg flex-shrink-0"
                 style={{
                   background: `linear-gradient(135deg, ${cardData.gradientFrom}, ${cardData.gradientTo})`,
                 }}
@@ -165,7 +165,7 @@ export function CardBenefitsSheet({ cardId, onClose }: CardBenefitsSheetProps) {
                       <p className="text-sm font-display font-bold text-profit">{r.rate}%</p>
                     </div>
                   ))}
-                  <div className="bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/40 dark:border-white/[0.03] rounded-2xl p-3 flex items-center gap-3">
+                  <div className={`bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/40 dark:border-white/[0.03] rounded-2xl p-3 flex items-center gap-3 ${cardData.rewards.length % 2 === 0 ? 'col-span-2' : ''}`}>
                     <span className="text-xl">💳</span>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-semibold text-ink-primary truncate">Base Rate</p>
