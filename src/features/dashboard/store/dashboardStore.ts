@@ -284,8 +284,22 @@ const MOCK_BUDGETS: CategoryBudget[] = [
   }
 ];
 
+const d = new Date();
+const MOCK_TRANSACTIONS: Transaction[] = [
+  { id: 'tx-1', type: 'debit', amount: 150000, merchantName: 'Amazon', category: 'shopping', timestamp: new Date(d.getTime() - 1 * 86400000).toISOString(), cardId: 'card-001', pending: false },
+  { id: 'tx-2', type: 'debit', amount: 45000, merchantName: 'Swiggy', category: 'dining', timestamp: new Date(d.getTime() - 2 * 86400000).toISOString(), cardId: 'card-001', pending: false },
+  { id: 'tx-3', type: 'debit', amount: 1200000, merchantName: 'MakeMyTrip', category: 'travel', timestamp: new Date(d.getTime() - 3 * 86400000).toISOString(), cardId: 'card-002', pending: false },
+  { id: 'tx-4', type: 'debit', amount: 80000, merchantName: 'Blinkit', category: 'groceries', timestamp: new Date(d.getTime() - 4 * 86400000).toISOString(), cardId: 'card-001', pending: false },
+  { id: 'tx-5', type: 'debit', amount: 250000, merchantName: 'Zara', category: 'shopping', timestamp: new Date(d.getTime() - 5 * 86400000).toISOString(), cardId: 'card-002', pending: false },
+  { id: 'tx-6', type: 'debit', amount: 30000, merchantName: 'Uber', category: 'transport', timestamp: new Date(d.getTime() - 6 * 86400000).toISOString(), cardId: 'card-001', pending: false },
+  { id: 'tx-7', type: 'debit', amount: 150000, merchantName: 'Netflix', category: 'subscriptions', timestamp: new Date(d.getTime() - 0.5 * 86400000).toISOString(), cardId: 'card-002', pending: false },
+  { id: 'tx-8', type: 'debit', amount: 320000, merchantName: 'Croma', category: 'shopping', timestamp: new Date(d.getTime() - 1.5 * 86400000).toISOString(), cardId: 'card-001', pending: false },
+  { id: 'tx-9', type: 'debit', amount: 85000, merchantName: 'Zomato', category: 'dining', timestamp: new Date(d.getTime() - 3.5 * 86400000).toISOString(), cardId: 'card-002', pending: false },
+  { id: 'tx-10', type: 'debit', amount: 12000, merchantName: 'Starbucks', category: 'dining', timestamp: new Date(d.getTime() - 5.5 * 86400000).toISOString(), cardId: 'card-001', pending: false },
+];
+
 const INITIAL_STATE: DashboardState = {
-  transactions:   [],
+  transactions:   MOCK_TRANSACTIONS,
   creditAccounts: [],
   rewards:        EMPTY_REWARDS,
   activeCardId:   '',
