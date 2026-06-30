@@ -598,6 +598,7 @@ function HomeTab() {
                         cardholderName: cardNameInput.trim(),
                         expiry: cardExpiryInput,
                         network: selectedTemplate.network.toLowerCase() as any,
+                        bank: selectedTemplate.bank,
                         status: 'active',
                         availableCredit: limitNum * 100,
                         creditLimit: limitNum * 100,

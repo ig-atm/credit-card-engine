@@ -5,7 +5,7 @@ interface BankLogoProps {
 }
 
 export function BankLogo({ bank, className = '' }: BankLogoProps) {
-  const normalizedBank = bank.toUpperCase().replace(/\s+/g, '');
+  const normalizedBank = (bank || 'Unknown Bank').toUpperCase().replace(/\s+/g, '');
   let bg = '#52525b'; // default fallback dark gray
   let initials = 'BNK';
   let textColor = '#ffffff';

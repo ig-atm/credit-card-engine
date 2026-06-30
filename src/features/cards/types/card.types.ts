@@ -12,6 +12,8 @@ export interface CardData {
   expiry: string;
   /** Card network */
   network: CardNetwork;
+  /** Bank name */
+  bank?: string;
   /** Card status */
   status: CardStatus;
   /** Available credit in cents */
