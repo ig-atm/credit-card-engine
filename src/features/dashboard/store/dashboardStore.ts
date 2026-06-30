@@ -110,6 +110,15 @@ interface DashboardActions {
   /** Remove a card from user's wallet */
   deleteUserCard: (cardId: string) => void;
 
+  /** Add a new category budget */
+  addBudget: (budget: CategoryBudget) => void;
+
+  /** Add a new subscription (renewal) */
+  addSubscription: (subscription: Subscription) => void;
+
+  /** Cancel a subscription */
+  cancelSubscription: (subscriptionId: string) => void;
+
   /** Reset store to seed state — useful for development. */
   _reset: () => void;
 }
@@ -491,6 +500,30 @@ export const useDashboardStore = create<DashboardState & DashboardActions>()(
             const available = state.rewards.totalPoints - state.rewards.redeemedPoints;
             const toRedeem  = Math.min(points, available);
             state.rewards.redeemedPoints += toRedeem;
+          });
+        },
+
+        // ── addBudget ────────────────────────────────────────────────────────
+        addBudget(budget) {
+          set((state) => {
+            state.budgets.push(budget);
+          });
+        },
+
+        // ── addSubscription ──────────────────────────────────────────────────
+        addSubscription(subscription) {
+          set((state) => {
+            state.subscriptions.push(subscription);
+          });
+        },
+
+        // ── cancelSubscription ───────────────────────────────────────────────
+        cancelSubscription(subscriptionId) {
+          set((state) => {
+            const sub = state.subscriptions.find(s => s.id === subscriptionId);
+            if (sub) {
+              sub.status = 'cancelled';
+            }
           });
         },
 

@@ -2,11 +2,48 @@ import { motion } from 'framer-motion';
 import { Target, ShieldCheck, HeartPulse } from 'lucide-react';
 import { useDashboardStore } from '../../dashboard/store/dashboardStore';
 import { cn, formatCents } from '../../../lib/utils';
+import type { TransactionCategory } from '../../dashboard/types/dashboard.types';
+import { useState } from 'react';
 
 export function BudgetingPanel() {
   const budgets = useDashboardStore((s) => s.budgets) || [];
   const creditAccounts = useDashboardStore((s) => s.creditAccounts) || [];
   const transactions = useDashboardStore((s) => s.transactions) || [];
+  const addBudget = useDashboardStore((s) => s.addBudget);
+
+  const [showAddBudget, setShowAddBudget] = useState(false);
+  const [isCustomBudget, setIsCustomBudget] = useState(false);
+  const [customCategory, setCustomCategory] = useState<TransactionCategory>('other');
+  const [customAmountStr, setCustomAmountStr] = useState('');
+
+  const PRESET_BUDGETS: { category: TransactionCategory; label: string; defaultLimit: number }[] = [
+    { category: 'groceries', label: 'Groceries', defaultLimit: 2000000 }, // ₹20k
+    { category: 'dining', label: 'Dining out', defaultLimit: 1000000 },
+    { category: 'shopping', label: 'Shopping', defaultLimit: 1500000 },
+    { category: 'travel', label: 'Travel', defaultLimit: 3000000 },
+    { category: 'entertainment', label: 'Entertainment', defaultLimit: 500000 },
+  ];
+
+  const handleAddBudget = (category: TransactionCategory, limitAmount: number) => {
+    addBudget({
+      id: `budget-${Date.now()}`,
+      category,
+      limitAmount,
+      currentSpend: 0,
+      period: 'monthly'
+    });
+    setShowAddBudget(false);
+    setIsCustomBudget(false);
+    setCustomAmountStr('');
+  };
+
+  const handleCustomSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amountInCents = Math.floor(parseFloat(customAmountStr) * 100);
+    if (!isNaN(amountInCents) && amountInCents > 0) {
+      handleAddBudget(customCategory, amountInCents);
+    }
+  };
 
   // Calculate overall credit utilization
   const totalLimit = creditAccounts.reduce((acc, a) => acc + a.totalLimit, 0);
@@ -42,12 +79,12 @@ export function BudgetingPanel() {
         
         <div className="flex flex-col md:flex-row items-center gap-6 relative z-10">
           <div className="flex flex-col items-center justify-center">
-            <div className="w-24 h-24 rounded-full border-4 border-canvas-200 dark:border-white/5 flex items-center justify-center relative shadow-inner">
-              <svg className="absolute inset-0 w-full h-full -rotate-90">
-                <circle cx="44" cy="44" r="44" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-canvas-200 dark:text-white/5 translate-x-1 translate-y-1" />
-                <circle cx="44" cy="44" r="44" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="276.46" strokeDashoffset={276.46 - (276.46 * healthScore) / 100} className={cn("transition-all duration-1000 ease-out translate-x-1 translate-y-1", healthColor)} strokeLinecap="round" />
+            <div className="w-24 h-24 relative flex items-center justify-center rounded-full shadow-inner">
+              <svg viewBox="0 0 96 96" className="absolute inset-0 w-full h-full -rotate-90 overflow-visible">
+                <circle cx="48" cy="48" r="44" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-canvas-200 dark:text-white/5" />
+                <circle cx="48" cy="48" r="44" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="276.46" strokeDashoffset={276.46 - (276.46 * healthScore) / 100} className={cn("transition-all duration-1000 ease-out", healthColor)} strokeLinecap="round" />
               </svg>
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center relative z-10">
                 <span className="text-2xl font-display font-bold text-ink-primary">{Math.round(healthScore)}</span>
               </div>
             </div>
@@ -72,10 +109,18 @@ export function BudgetingPanel() {
 
       {/* Category Budgets */}
       <div>
-        <h3 className="text-sm font-semibold text-ink-primary mb-3 flex items-center gap-2">
-          <Target size={16} className="text-brand-500" />
-          Category Budgets
-        </h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-ink-primary flex items-center gap-2">
+            <Target size={16} className="text-brand-500" />
+            Category Budgets
+          </h3>
+          <button 
+            onClick={() => setShowAddBudget(true)}
+            className="text-xs font-bold text-brand-500 bg-brand-50 dark:bg-brand-500/10 px-3 py-1 rounded-full hover:bg-brand-100 dark:hover:bg-brand-500/20 transition-colors"
+          >
+            + Add Budget
+          </button>
+        </div>
         
         <div className="flex flex-col gap-3">
           {budgets.map((budget) => {
@@ -140,6 +185,109 @@ export function BudgetingPanel() {
           })}
         </div>
       </div>
+
+      {/* Add Budget Modal */}
+      {showAddBudget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="w-full max-w-md bg-canvas-50 dark:bg-canvas-200 rounded-[2rem] p-6 shadow-ag-modal border border-canvas-200/60 dark:border-white/[0.04]"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-display font-bold text-ink-primary">Add a Budget</h3>
+              <button 
+                onClick={() => {
+                  setShowAddBudget(false);
+                  setIsCustomBudget(false);
+                }} 
+                className="w-8 h-8 rounded-full bg-canvas-100 dark:bg-white/5 flex items-center justify-center text-ink-tertiary hover:text-ink-primary"
+              >
+                ✕
+              </button>
+            </div>
+
+            {isCustomBudget ? (
+              <form onSubmit={handleCustomSubmit} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-bold text-ink-primary">Category</label>
+                  <select
+                    value={customCategory}
+                    onChange={(e) => setCustomCategory(e.target.value as TransactionCategory)}
+                    className="w-full bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5 rounded-xl px-4 py-3 text-ink-primary text-sm focus:outline-none focus:border-brand-500/50 transition-colors capitalize"
+                  >
+                    {['dining', 'travel', 'groceries', 'entertainment', 'utilities', 'shopping', 'health', 'transport', 'subscriptions', 'other'].map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-bold text-ink-primary">Limit Amount (₹)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="e.g. 5000"
+                    value={customAmountStr}
+                    onChange={(e) => setCustomAmountStr(e.target.value)}
+                    required
+                    className="w-full bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5 rounded-xl px-4 py-3 text-ink-primary text-sm focus:outline-none focus:border-brand-500/50 transition-colors"
+                  />
+                </div>
+
+                <div className="flex gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomBudget(false)}
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-ink-secondary bg-canvas-100 dark:bg-white/5 hover:bg-canvas-200 dark:hover:bg-white/10 transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-brand-500 hover:bg-brand-600 transition-colors"
+                  >
+                    Add Budget
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm font-medium text-ink-secondary mb-2">Popular Options:</p>
+              {PRESET_BUDGETS.map((preset) => (
+                <button
+                  key={preset.category}
+                  onClick={() => handleAddBudget(preset.category, preset.defaultLimit)}
+                  className="flex items-center justify-between p-4 rounded-2xl bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5 hover:border-brand-500/30 transition-all text-left"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-ink-primary">{preset.label}</p>
+                    <p className="text-xs text-ink-tertiary">Default Limit: {formatCents(preset.defaultLimit)}</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-brand-50 dark:bg-brand-500/10 flex items-center justify-center text-brand-500">
+                    +
+                  </div>
+                </button>
+              ))}
+
+                <button
+                  onClick={() => setIsCustomBudget(true)}
+                  className="flex items-center justify-between p-4 rounded-2xl bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5 hover:border-brand-500/30 transition-all text-left mt-2"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-ink-primary">Other (Custom)</p>
+                    <p className="text-xs text-ink-tertiary">Set your own category and limit</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-canvas-200 dark:bg-white/10 flex items-center justify-center text-ink-secondary">
+                    →
+                  </div>
+                </button>
+            </div>
+            )}
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

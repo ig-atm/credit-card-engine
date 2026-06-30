@@ -18,10 +18,58 @@ export function PerksDashboard() {
   const userCards = useDashboardStore((s) => s.userCards) || [];
   const rewards = useDashboardStore((s) => s.rewards) || { totalPoints: 0, redeemedPoints: 0 };
   const transactions = useDashboardStore((s) => s.transactions) || [];
+  const addSubscription = useDashboardStore((s) => s.addSubscription);
   
-  // Strictly link to user's actual cards
+  const [showAddRenewal, setShowAddRenewal] = useState(false);
+  const [isCustomRenewal, setIsCustomRenewal] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customAmountStr, setCustomAmountStr] = useState('');
+  const [customCycle, setCustomCycle] = useState<'monthly' | 'yearly'>('monthly');
+
+  const PRESET_RENEWALS = [
+    { name: 'Netflix', amount: 64900, category: 'entertainment', billingCycle: 'monthly' as const },
+    { name: 'Spotify Premium', amount: 11900, category: 'entertainment', billingCycle: 'monthly' as const },
+    { name: 'Amazon Prime', amount: 149900, category: 'shopping', billingCycle: 'yearly' as const },
+    { name: 'Youtube Premium', amount: 12900, category: 'entertainment', billingCycle: 'monthly' as const },
+    { name: 'Gym Membership', amount: 200000, category: 'health', billingCycle: 'monthly' as const },
+  ];
+
+  const handleAddRenewal = (preset: typeof PRESET_RENEWALS[0]) => {
+    if (userCards.length === 0) return;
+    addSubscription({
+      id: `sub-${Date.now()}`,
+      name: preset.name,
+      amount: preset.amount,
+      billingCycle: preset.billingCycle,
+      nextBillingDate: new Date(Date.now() + 30 * 86400000).toISOString(),
+      status: 'active',
+      cardId: userCards[0].id,
+      category: preset.category,
+      hasPriceHike: false,
+      isFreeTrial: false,
+    });
+    setShowAddRenewal(false);
+    setIsCustomRenewal(false);
+    setCustomName('');
+    setCustomAmountStr('');
+  };
+
+  const handleCustomSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const amountInCents = Math.floor(parseFloat(customAmountStr) * 100);
+    if (!isNaN(amountInCents) && amountInCents > 0 && customName.trim() !== '') {
+      handleAddRenewal({
+        name: customName,
+        amount: amountInCents,
+        category: 'subscriptions',
+        billingCycle: customCycle
+      });
+    }
+  };
+  
+  // Strictly link to user's actual cards and only show active ones
   const milestones = rawMilestones.filter(m => userCards.some(c => c.id === m.cardId));
-  const subscriptions = rawSubscriptions.filter(s => userCards.some(c => c.id === s.cardId));
+  const subscriptions = rawSubscriptions.filter(s => userCards.some(c => c.id === s.cardId) && s.status === 'active');
   const offers = rawOffers.filter(o => o.eligibleCardIds?.some(id => userCards.some(c => c.id === id)));
 
   const availablePoints = (rewards.totalPoints || 0) - (rewards.redeemedPoints || 0);
@@ -281,33 +329,73 @@ export function PerksDashboard() {
 
           {/* Subscriptions Radar */}
           <motion.div variants={itemVariants} className="panel-glass rounded-3xl p-6 flex-1">
-            <h3 className="text-sm font-bold text-ink-primary mb-4 flex items-center gap-2">
-              <CreditCard size={16} className="text-copper-500" />
-              Upcoming Renewals
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-bold text-ink-primary flex items-center gap-2">
+                <CreditCard size={16} className="text-copper-500" />
+                Upcoming Renewals
+              </h3>
+              <button 
+                onClick={() => setShowAddRenewal(true)}
+                className="text-xs font-bold text-copper-500 bg-copper-50 dark:bg-copper-500/10 px-3 py-1 rounded-full hover:bg-copper-100 dark:hover:bg-copper-500/20 transition-colors"
+              >
+                + Add Renewal
+              </button>
+            </div>
             
             <div className="flex flex-col gap-3">
               {subscriptions.slice(0, 5).map((sub) => {
                 const card = userCards.find(c => c.id === sub.cardId);
+                const cancelSubscription = useDashboardStore.getState().cancelSubscription;
+                
+                const getCancelUrl = (name: string) => {
+                  const lower = name.toLowerCase();
+                  if (lower.includes('netflix')) return 'https://www.netflix.com/cancelplan';
+                  if (lower.includes('spotify')) return 'https://www.spotify.com/account/cancel/';
+                  if (lower.includes('amazon')) return 'https://www.amazon.in/mc';
+                  if (lower.includes('youtube')) return 'https://www.youtube.com/paid_memberships';
+                  if (lower.includes('hotstar') || lower.includes('disney')) return 'https://www.hotstar.com/in/my-account';
+                  return null;
+                };
+                
+                const cancelUrl = getCancelUrl(sub.name);
+                
+                const handleCancel = () => {
+                  if (cancelUrl) {
+                    window.open(cancelUrl, '_blank');
+                  }
+                  cancelSubscription(sub.id);
+                };
+                
                 return (
-                  <div key={sub.id} className="flex items-center justify-between p-3 rounded-2xl bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
-                        {sub.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-bold text-ink-primary">{sub.name}</p>
-                          {sub.hasPriceHike && <ShieldAlert size={12} className="text-red-500" />}
+                  <div key={sub.id} className="flex flex-col p-3 rounded-2xl bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-xs shrink-0">
+                          {sub.name.charAt(0)}
                         </div>
-                        <p className="text-[10px] font-semibold text-ink-tertiary uppercase tracking-wider mt-0.5">
-                          {formatDate(sub.nextBillingDate)}
-                        </p>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-bold text-ink-primary">{sub.name}</p>
+                            {sub.hasPriceHike && <ShieldAlert size={12} className="text-red-500" />}
+                          </div>
+                          <p className="text-[10px] font-semibold text-ink-tertiary uppercase tracking-wider mt-0.5">
+                            {formatDate(sub.nextBillingDate)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-ink-primary">{formatCents(sub.amount)}</p>
+                        <p className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider">{sub.billingCycle}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-ink-primary">{formatCents(sub.amount)}</p>
-                      <p className="text-[9px] font-bold text-ink-tertiary uppercase tracking-wider">{sub.billingCycle}</p>
+                    
+                    <div className="flex items-center justify-end border-t border-canvas-200/50 dark:border-white/5 pt-2 mt-1">
+                      <button
+                        onClick={handleCancel}
+                        className="text-[10px] font-bold text-red-500 hover:text-red-600 uppercase tracking-wider flex items-center gap-1"
+                      >
+                        {cancelUrl ? 'Cancel on Website' : 'Cancel Subscription'} <ExternalLink size={10} />
+                      </button>
                     </div>
                   </div>
                 );
@@ -317,6 +405,124 @@ export function PerksDashboard() {
 
         </div>
       </div>
+
+      {/* Add Renewal Modal */}
+      {showAddRenewal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="w-full max-w-md bg-canvas-50 dark:bg-canvas-200 rounded-[2rem] p-6 shadow-ag-modal border border-canvas-200/60 dark:border-white/[0.04]"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-display font-bold text-ink-primary">Add a Renewal</h3>
+              <button 
+                onClick={() => {
+                  setShowAddRenewal(false);
+                  setIsCustomRenewal(false);
+                }} 
+                className="w-8 h-8 rounded-full bg-canvas-100 dark:bg-white/5 flex items-center justify-center text-ink-tertiary hover:text-ink-primary"
+              >
+                ✕
+              </button>
+            </div>
+
+            {isCustomRenewal ? (
+              <form onSubmit={handleCustomSubmit} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-bold text-ink-primary">Subscription Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Adobe Creative Cloud"
+                    value={customName}
+                    onChange={(e) => setCustomName(e.target.value)}
+                    required
+                    className="w-full bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5 rounded-xl px-4 py-3 text-ink-primary text-sm focus:outline-none focus:border-brand-500/50 transition-colors"
+                  />
+                </div>
+                
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-bold text-ink-primary">Amount (₹)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    placeholder="e.g. 500"
+                    value={customAmountStr}
+                    onChange={(e) => setCustomAmountStr(e.target.value)}
+                    required
+                    className="w-full bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5 rounded-xl px-4 py-3 text-ink-primary text-sm focus:outline-none focus:border-brand-500/50 transition-colors"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-bold text-ink-primary">Billing Cycle</label>
+                  <select
+                    value={customCycle}
+                    onChange={(e) => setCustomCycle(e.target.value as 'monthly' | 'yearly')}
+                    className="w-full bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5 rounded-xl px-4 py-3 text-ink-primary text-sm focus:outline-none focus:border-brand-500/50 transition-colors capitalize"
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="yearly">Yearly</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-3 mt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomRenewal(false)}
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-ink-secondary bg-canvas-100 dark:bg-white/5 hover:bg-canvas-200 dark:hover:bg-white/10 transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-3 rounded-xl font-bold text-white bg-copper-500 hover:bg-copper-600 transition-colors"
+                  >
+                    Add Renewal
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm font-medium text-ink-secondary mb-2">Popular Subscriptions:</p>
+              {PRESET_RENEWALS.map((preset) => (
+                <button
+                  key={preset.name}
+                  onClick={() => handleAddRenewal(preset)}
+                  className="flex items-center justify-between p-4 rounded-2xl bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5 hover:border-copper-500/30 transition-all text-left"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-ink-primary">{preset.name}</p>
+                    <p className="text-xs text-ink-tertiary">{formatCents(preset.amount)} / {preset.billingCycle}</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-copper-50 dark:bg-copper-500/10 flex items-center justify-center text-copper-500">
+                    +
+                  </div>
+                </button>
+              ))}
+
+                <button
+                  onClick={() => setIsCustomRenewal(true)}
+                  className="flex items-center justify-between p-4 rounded-2xl bg-canvas-100 dark:bg-white/[0.02] border border-canvas-200/50 dark:border-white/5 hover:border-copper-500/30 transition-all text-left mt-2"
+                >
+                  <div>
+                    <p className="text-sm font-bold text-ink-primary">Other (Custom)</p>
+                    <p className="text-xs text-ink-tertiary">Add your own subscription details</p>
+                  </div>
+                  <div className="w-8 h-8 rounded-full bg-canvas-200 dark:bg-white/10 flex items-center justify-center text-ink-secondary">
+                    →
+                  </div>
+                </button>
+            </div>
+            )}
+            
+            {userCards.length === 0 && (
+              <p className="text-xs text-red-500 mt-4 text-center">You need to add a card first to track subscriptions.</p>
+            )}
+          </motion.div>
+        </div>
+      )}
     </motion.div>
   );
 }
