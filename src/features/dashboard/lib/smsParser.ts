@@ -100,9 +100,9 @@ function extractLast4(sms: string): string | null {
 
 const DATE_PATTERNS = [
   // 29-06-26 or 29/06/2026
-  /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/,
+  /(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})/,
   // 29 Jun 2026 / 29-Jun-26
-  /(\d{1,2})[\s\-]([A-Za-z]{3})[\s\-](\d{2,4})/,
+  /(\d{1,2})[\s-]([A-Za-z]{3})[\s-](\d{2,4})/,
 ];
 
 const MONTH_MAP: Record<string, number> = {

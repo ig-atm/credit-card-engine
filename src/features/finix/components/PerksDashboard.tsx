@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Gift, CreditCard, Tag, ArrowRight, ShieldAlert, Plane, Hotel, Star, Sparkles, Percent, Calendar, ExternalLink } from 'lucide-react';
+import { Target, Gift, CreditCard, Tag, ShieldAlert, Plane, Hotel, Star, Sparkles, Percent, Calendar, ExternalLink } from 'lucide-react';
 import { useDashboardStore } from '../../dashboard/store/dashboardStore';
 import { cn, formatCents } from '../../../lib/utils';
 import { BankLogo } from '../../cards/components/BankLogo';
@@ -94,7 +94,7 @@ export function PerksDashboard() {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: import('framer-motion').Variants = {
     hidden: { opacity: 0, y: 15 },
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
   };
@@ -201,7 +201,7 @@ export function PerksDashboard() {
                     )}
                     <div className="flex gap-3 mb-4">
                       <div className="w-10 h-10 rounded-xl bg-canvas-200 dark:bg-canvas-300 flex items-center justify-center shrink-0 shadow-inner">
-                        {card ? <BankLogo bank={card.bank} /> : <Gift size={18} className="text-brand-500"/>}
+                        {card ? <BankLogo bank={card.bank || ''} /> : <Gift size={18} className="text-brand-500"/>}
                       </div>
                       <div>
                         <p className="text-sm font-bold text-ink-primary leading-tight">{m.title}</p>
@@ -344,7 +344,6 @@ export function PerksDashboard() {
             
             <div className="flex flex-col gap-3">
               {subscriptions.slice(0, 5).map((sub) => {
-                const card = userCards.find(c => c.id === sub.cardId);
                 const cancelSubscription = useDashboardStore.getState().cancelSubscription;
                 
                 const getCancelUrl = (name: string) => {

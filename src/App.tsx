@@ -16,7 +16,6 @@ import {
   Trash2,
   Info,
   Target,
-  Tag,
 } from 'lucide-react';
 
 import { DashboardLayout } from './components/layout/DashboardLayout';
@@ -897,13 +896,13 @@ function InsightsTab() {
 //  PERKS TAB
 // ─────────────────────────────────────────────────────────────────────────────
 
-type PerksTabId = 'rewards' | 'subscriptions' | 'offers';
+// type PerksTabId = 'rewards' | 'subscriptions' | 'offers';
 
-const PERKS_TABS: { id: PerksTabId; label: string; icon: typeof Gift }[] = [
-  { id: 'rewards',       label: 'Rewards & Milestones', icon: Gift },
-  { id: 'subscriptions', label: 'Subscriptions',        icon: CreditCard },
-  { id: 'offers',        label: 'Card Offers',          icon: Tag },
-];
+// const PERKS_TABS: { id: PerksTabId; label: string; icon: typeof Gift }[] = [
+//   { id: 'rewards',       label: 'Rewards & Milestones', icon: Gift },
+//   { id: 'subscriptions', label: 'Subscriptions',        icon: CreditCard },
+//   { id: 'offers',        label: 'Card Offers',          icon: Tag },
+// ];
 
 function PerksTab() {
   return (

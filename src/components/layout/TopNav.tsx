@@ -24,7 +24,7 @@ interface TopNavProps {
   onToggleTheme: () => void;
 }
 
-export function TopNav({ activeTab, isDark, onToggleTheme }: TopNavProps) {
+export function TopNav({ activeTab, isDark: _isDark, onToggleTheme: _onToggleTheme }: TopNavProps) {
   const { title, subtitle } = TAB_TITLES[activeTab];
   const profile = useDashboardStore((s) => s.profile);
   const [showNotifications, setShowNotifications] = useState(false);

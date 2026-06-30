@@ -267,7 +267,7 @@ function PayBillModal({ bill, onClose }: PayBillModalProps) {
       }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [step]);
+  }, [step, payBill, payAmount, bill.id]);
 
   const handlePaySubmit = (e: React.FormEvent) => {
     e.preventDefault();
